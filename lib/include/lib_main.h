@@ -23,3 +23,6 @@ void init_config(GeneratorConfig* cfg);
 
 // Обновление списка разделителей
 void update_separators(GeneratorConfig* cfg, const char* new_seps, int replace);
+
+// Функция для парсинга аргументов командной строки
+int parse_args(int argc, char* argv[], GeneratorConfig* cfg);
