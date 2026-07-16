@@ -16,6 +16,8 @@ typedef struct {
     char* alphabet;        // Пользовательский алфавит (-a)
     char* char_sets;       // Наборы символов (-C: a, A, D, S)
     char separators[32];   // Допустимые разделители
+    double probs[128];     // Массив для хранения вероятностей 
+    int probs_count;       // Сколько вероятностей было задано
 } GeneratorConfig;
 
 // Инициализация структуры стандартными значениями

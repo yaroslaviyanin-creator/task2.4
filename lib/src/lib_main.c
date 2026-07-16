@@ -13,15 +13,14 @@ lib_main.c - главный модуль библиотеки.
 
 // <cfg> - указатель на структуру с параметрами
 void init_config(GeneratorConfig* cfg) {
+    cfg->probs_count = 0;
     cfg->min_len = 0;
     cfg->max_len = 0;
     cfg->exact_len = 0;
-    cfg->count = 1;         // По умолчанию генерируем 1 пароль
+    cfg->count = 1;         // По умолчанию 1 пароль
     cfg->alphabet = NULL;
     cfg->char_sets = NULL;
-
-    // Стандартные разделители по условию задания
-    strcpy(cfg->separators, "=:");
+    strcpy(cfg->separators, "=:");  
 }
 
 // <cfg> - указатель на структуру с параметрами
@@ -92,6 +91,30 @@ static int parse_positive_int(const char* str, int* val) {
     }
 
     *val = (int)res;
+    return 1;
+}
+
+
+// Функция для разбиения строки с вероятностями в массив чисел
+static int parse_probabilities(const char* str, double* probs, int* count) {
+    if (!str || *str == '\0') return 0;
+
+    // Делаем копию строки, так как strtok её ломает
+    char* copy = (char*)malloc(strlen(str) + 1);
+    if (!copy) return 0;
+    strcpy(copy, str);
+
+    *count = 0;
+    char* token = strtok(copy, ",");
+
+    while (token != NULL && *count < 128) {
+        // strtod переводит строку в double
+        probs[*count] = strtod(token, NULL);
+        (*count)++;
+        token = strtok(NULL, ",");
+    }
+
+    free(copy);
     return 1;
 }
 
@@ -206,6 +229,16 @@ int parse_args(int argc, char* argv[], GeneratorConfig* cfg) {
                 return -1;
             }
             cfg->alphabet = val;
+            continue;
+        }
+
+        // Парсинг вероятностей
+        if (starts_with(arg, "-p")) {
+            char* val = get_arg_value(arg, "-p", cfg, &i, argc, argv, 0);
+            if (!val || !parse_probabilities(val, cfg->probs, &cfg->probs_count)) {
+                fprintf(stderr, "Error: invalid value for -p.\n");
+                return -1;
+            }
             continue;
         }
     }
