@@ -29,3 +29,6 @@ int parse_args(int argc, char* argv[], GeneratorConfig* cfg);
 
 // Валидация логической целостности параметров
 int validate_config(const GeneratorConfig* cfg);
+
+// Формирование итогового алфавита на основе выбранных опций
+char* build_alphabet(const GeneratorConfig* cfg);

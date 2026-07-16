@@ -7,6 +7,7 @@ main.c - главный модуль программы.
 
 #include "lib_main.h"
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char* argv[]) {
     GeneratorConfig config;
@@ -20,6 +21,17 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    printf("--- Config is valid! ---\n");
+    // Тестируем сборку алфавита
+    char* full_alphabet = build_alphabet(&config);
+    if (full_alphabet) {
+        printf("--- Generated Alphabet ---\n");
+        printf("%s\n", full_alphabet);
+        free(full_alphabet); // Обязательно освобождаем память
+    }
+    else {
+        fprintf(stderr, "Error: failed to build alphabet.\n");
+        return 1;
+    }
+
     return 0;
 }

@@ -254,3 +254,45 @@ int validate_config(const GeneratorConfig* cfg) {
 
     return 1;
 }
+
+// Функция для создания строки со всеми допустимыми символами для пароля
+// <cfg> - указатель на структуру с параметрами
+// Возвращает динамически выделенную строку (необходимо освободить через free), либо NULL при ошибке
+char* build_alphabet(const GeneratorConfig* cfg) {
+    if (cfg->alphabet) {
+        // Если передан пользовательский алфавит, просто копируем его
+        char* res = (char*)malloc(strlen(cfg->alphabet) + 1);
+        if (res) {
+            strcpy(res, cfg->alphabet);
+        }
+        return res;
+    }
+
+    if (cfg->char_sets) {
+        // Выделяем буфер с запасом (26 мал + 26 бол + 10 цифр + 30 спецсимволов = ~92 байта)
+        // 128 байт хватит с головой
+        char* res = (char*)malloc(128);
+        if (!res) return NULL;
+
+        res[0] = '\0'; // Инициализируем пустой строкой
+
+        for (int i = 0; cfg->char_sets[i] != '\0'; i++) {
+            char c = cfg->char_sets[i];
+            if (c == 'a') {
+                strcat(res, "abcdefghijklmnopqrstuvwxyz");
+            }
+            else if (c == 'A') {
+                strcat(res, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            }
+            else if (c == 'D') {
+                strcat(res, "0123456789");
+            }
+            else if (c == 'S') {
+                strcat(res, "!@#$%^&*()_+-=[]{}|;:,.<>?");
+            }
+        }
+        return res;
+    }
+
+    return NULL;
+}
