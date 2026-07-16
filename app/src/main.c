@@ -51,20 +51,19 @@ int main(int argc, char* argv[]) {
             current_len = config.exact_len;
         }
         else {
-            // Если задан диапазон (например 10-15)
+            // Если задан диапазон
             int diff = config.max_len - config.min_len + 1;
             current_len = config.min_len + (rand() % diff);
         }
 
-        // Генерируем и печатаем (вероятности пока не передаем, сделаем это в следующем шаге)
-        char* password = generate_password(current_len, full_alphabet);
+        // Генерируем и печатаем
+        char* password = generate_password(current_len, full_alphabet, weights);
         if (password) {
             printf("%s\n", password);
             free(password); // Чистим память после каждого пароля
         }
     }
 
-    // Очищаем память, выделенную под алфавит и вероятности
     free(weights);
     free(full_alphabet);
 

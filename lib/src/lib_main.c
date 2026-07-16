@@ -333,21 +333,39 @@ char* build_alphabet(const GeneratorConfig* cfg) {
 // Функция для генерации случайного пароля
 // <length> - требуемая длина пароля
 // <alphabet> - строка с допустимыми символами
+// <weights> - массив вероятностей для каждого символа (размер равен длине алфавита)
 // Возвращает динамически выделенную строку с паролем, либо NULL при ошибке
-char* generate_password(int length, const char* alphabet) {
+char* generate_password(int length, const char* alphabet, const double* weights) {
     if (length <= 0 || !alphabet) return NULL;
 
     int alph_len = strlen(alphabet);
     if (alph_len == 0) return NULL;
 
-    // Выделяем память под пароль + нуль-терминатор
     char* password = (char*)malloc(length + 1);
     if (!password) return NULL;
 
     for (int i = 0; i < length; i++) {
-        // Берем случайный индекс от 0 до alph_len - 1
-        int rand_index = rand() % alph_len;
-        password[i] = alphabet[rand_index];
+        if (weights == NULL) {
+            // Обычный рандом, если вероятности не передали
+            int rand_index = rand() % alph_len;
+            password[i] = alphabet[rand_index];
+        }
+        else {
+            // Взвешенный рандом
+            // rand() / RAND_MAX дает случайное число от 0.0 до 1.0
+            double r = (double)rand() / RAND_MAX;
+            double cumulative = 0.0;
+            int selected_index = alph_len - 1; // Защита от погрешностей математики
+
+            for (int j = 0; j < alph_len; j++) {
+                cumulative += weights[j];
+                if (r <= cumulative) {
+                    selected_index = j;
+                    break;
+                }
+            }
+            password[i] = alphabet[selected_index];
+        }
     }
     password[length] = '\0';
 
