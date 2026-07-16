@@ -296,3 +296,27 @@ char* build_alphabet(const GeneratorConfig* cfg) {
 
     return NULL;
 }
+
+// Функция для генерации случайного пароля
+// <length> - требуемая длина пароля
+// <alphabet> - строка с допустимыми символами
+// Возвращает динамически выделенную строку с паролем, либо NULL при ошибке
+char* generate_password(int length, const char* alphabet) {
+    if (length <= 0 || !alphabet) return NULL;
+
+    int alph_len = strlen(alphabet);
+    if (alph_len == 0) return NULL;
+
+    // Выделяем память под пароль + нуль-терминатор
+    char* password = (char*)malloc(length + 1);
+    if (!password) return NULL;
+
+    for (int i = 0; i < length; i++) {
+        // Берем случайный индекс от 0 до alph_len - 1
+        int rand_index = rand() % alph_len;
+        password[i] = alphabet[rand_index];
+    }
+    password[length] = '\0';
+
+    return password;
+}
