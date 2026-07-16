@@ -49,10 +49,57 @@ void test_update_separators_replace(void) {
     TEST_ASSERT_EQUAL_STRING("-", cfg.separators);
 }
 
+// Тест 4: Проверка настроек
+void test_validate_config_success(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.exact_len = 10;
+    cfg.char_sets = "aD";
+
+    TEST_ASSERT_EQUAL_INT(1, validate_config(&cfg));
+}
+
+// Тест 5: Проверка настроек
+void test_validate_config_fail_no_length(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.char_sets = "aD";
+
+    // min_len и exact_len равны 0. Должно вернуть 0
+    TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
+}
+
+// Тест 6: Проверка конфликта -minl и -n
+void test_validate_config_fail_conflict_length(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.exact_len = 10;
+    cfg.min_len = 5;
+    cfg.max_len = 15;
+    cfg.char_sets = "aD";
+
+    TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
+}
+
+// Тест 7: Проверка конфликт -a и -C
+void test_validate_config_fail_conflict_alphabet(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.exact_len = 10;
+    cfg.alphabet = "abc";
+    cfg.char_sets = "aD";
+
+    TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
+}
+
 int main(void) {
     UNITY_BEGIN();
     RUN_TEST(test_init_config);
     RUN_TEST(test_update_separators_add);
     RUN_TEST(test_update_separators_replace);
+    RUN_TEST(test_validate_config_success);
+    RUN_TEST(test_validate_config_fail_no_length);
+    RUN_TEST(test_validate_config_fail_conflict_length);
+    RUN_TEST(test_validate_config_fail_conflict_alphabet);
     return UNITY_END();
 }
