@@ -1,26 +1,26 @@
 /*
-test_app.c - модуль проверки программы. 
+test_app.c - интеграционные тесты программы.
 
-Маткин Илья Александрович
+Янин Ярослав Иванович
+Группа МК-101
 */
 
 #include "unity.h"
-
 #include "lib_main.h"
 
 void setUp(void) {
-    // Вызывается перед каждым тестом (можно оставить пустым)
 }
 
 void tearDown(void) {
-    // Вызывается после каждого теста (можно оставить пустым)
 }
 
-void TestLibAddFunction(void) {
-
+void test_dummy(void) {
+    // Простая заглушка, чтобы файл компилировался без ошибок
+    TEST_ASSERT_TRUE(1);
 }
 
 int main(void) {
-    return;
+    UNITY_BEGIN();
+    RUN_TEST(test_dummy);
+    return UNITY_END();
 }
-
