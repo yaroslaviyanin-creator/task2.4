@@ -4,7 +4,7 @@ lib_main.c - главный модуль библиотеки.
 Янин Ярослав Иванович
 Группа МК-101
 */
-
+/*
 #include "lib_main.h"
 #include <stdio.h>
 #include <string.h>
@@ -240,15 +240,31 @@ int parse_args(int argc, char* argv[], GeneratorConfig* cfg) {
             continue;
         }
         if (starts_with(arg, "-a")) {
-            if (cfg->alphabet) {
-                fprintf(stderr, "Error: option -a is duplicated.\n");
-                return -1;
+            if (cfg->alphabet) { fprintf(stderr, "Error: option -a is duplicated.\n"); return -1; }
+
+            char* val = (char*)(arg + 2); // Пропускаем сам префикс "-a"
+
+            // Если есть разделитель (например -a=), пропускаем его
+            if (*val != '\0' && strchr(cfg->separators, *val) != NULL) {
+                val++;
             }
-            char* val = get_arg_value(arg, "-a", cfg, &i, argc, argv, 0);
-            if (!val || *val == '\0') {
-                fprintf(stderr, "Error: missing value for -a.\n");
-                return -1;
+
+            // Если значение слитно не написано, смотрим следующий аргумент в консоли
+            if (*val == '\0' && i + 1 < argc) {
+                // Берем его ТОЛЬКО если он НЕ начинается с минуса 
+                // (если начинается с минуса, значит это другая опция, например -m2, и мы её не трогаем)
+                if (argv[i + 1][0] != '-') {
+                    i++;
+                    val = argv[i];
+                }
+
             }
+
+            // Если значение так и осталось пустым, инициализируем его полным алфавитом!
+            if (*val == '\0') {
+                val = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*()_+-=[]{}|;:,.<>?";
+            }
+
             cfg->alphabet = val;
             continue;
         }
@@ -477,3 +493,4 @@ double* build_weights(const GeneratorConfig* cfg, const char* alphabet) {
 
     return weights;
 }
+*/
