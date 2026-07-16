@@ -26,3 +26,6 @@ void update_separators(GeneratorConfig* cfg, const char* new_seps, int replace);
 
 // Функция для парсинга аргументов командной строки
 int parse_args(int argc, char* argv[], GeneratorConfig* cfg);
+
+// Валидация логической целостности параметров
+int validate_config(const GeneratorConfig* cfg);

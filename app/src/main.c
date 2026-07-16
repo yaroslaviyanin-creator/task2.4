@@ -12,10 +12,14 @@ int main(int argc, char* argv[]) {
     GeneratorConfig config;
     init_config(&config);
 
-    printf("--- Start parsing ---\n");
-    parse_args(argc, argv, &config);
-    printf("--- End parsing ---\n");
-    printf("Final separators: '%s'\n", config.separators);
+    if (parse_args(argc, argv, &config) != 0) {
+        return 1;
+    }
 
+    if (!validate_config(&config)) {
+        return 1;
+    }
+
+    printf("--- Config is valid! ---\n");
     return 0;
 }
