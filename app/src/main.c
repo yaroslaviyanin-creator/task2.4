@@ -17,5 +17,12 @@ int main(int argc, char *argv[]) {
     // Временный вывод для проверки
     printf("Config initialized. Default separators: '%s'\n", config.separators);
     
+    // Временная проверка работы функции
+    update_separators(&config, "!", 0); // Добавляем '!'
+    printf("Separators after add: '%s'\n", config.separators);
+
+    update_separators(&config, "-", 1); // Заменяем на '-'
+    printf("Separators after replace: '%s'\n", config.separators);
+
     return 0;
 }

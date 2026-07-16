@@ -20,3 +20,6 @@ typedef struct {
 
 // Инициализация структуры стандартными значениями
 void init_config(GeneratorConfig* cfg);
+
+// Обновление списка разделителей
+void update_separators(GeneratorConfig* cfg, const char* new_seps, int replace);
