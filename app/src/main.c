@@ -16,9 +16,10 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
-    printf("--- Config values ---\n");
-    printf("minl: %d, maxl: %d, n: %d, count: %d\n", config.min_len, config.max_len, config.exact_len, config.count);
-    printf("alphabet: %s, char_sets: %s\n", config.alphabet ? config.alphabet : "(null)", config.char_sets ? config.char_sets : "(null)");
+    if (!validate_config(&config)) {
+        return 1;
+    }
 
+    printf("--- Config is valid! ---\n");
     return 0;
 }
