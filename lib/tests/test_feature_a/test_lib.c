@@ -1,29 +1,144 @@
 /*
-test_lib.c - модуль проверки библиотеки. 
+test_lib.c - модуль проверки библиотеки.
 
-Маткин Илья Александрович
+Янин Ярослав Иванович
+Группа МК-101
 */
 
 #include "unity.h"
-
 #include "lib_main.h"
+#include <string.h>
+#include <stdlib.h>
 
 void setUp(void) {
     // Вызывается перед каждым тестом (можно оставить пустым)
 }
 
 void tearDown(void) {
-    // Вызывается после каждого теста (можно оставить пустым)
+    // Вызывается после каждого теста
 }
 
-void TestLibAddFunction(void) {
-    // Пример проверки: ожидали 3, получили результат функции
-    TEST_ASSERT_EQUAL_INT(3, LibAddFunction(1, 2));
+// Тест 1: Проверка инициализации структуры
+void test_init_config(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    TEST_ASSERT_EQUAL_INT(0, cfg.min_len);
+    TEST_ASSERT_EQUAL_INT(1, cfg.count);
+    TEST_ASSERT_EQUAL_STRING("=:", cfg.separators);
+}
+
+// Тест 2: Проверка  -d
+void test_update_separators_add(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+
+    // Добавляем восклицательный знак
+    update_separators(&cfg, "!", 0);
+    // Должно стать =:!
+    TEST_ASSERT_EQUAL_STRING("=:!", cfg.separators);
+}
+
+// Тест 3: Проверка -D
+void test_update_separators_replace(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+
+    // Заменяем всё на тире
+    update_separators(&cfg, "-", 1);
+    TEST_ASSERT_EQUAL_STRING("-", cfg.separators);
+}
+
+// Тест 4: Проверка настроек
+void test_validate_config_success(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.exact_len = 10;
+    cfg.char_sets = "aD";
+
+    TEST_ASSERT_EQUAL_INT(1, validate_config(&cfg));
+}
+
+// Тест 5: Проверка ошибки длины
+void test_validate_config_fail_no_length(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.char_sets = "aD";
+
+    // min_len и exact_len равны 0
+    TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
+}
+
+// Тест 6: Проверка конфликта -minl и -n
+void test_validate_config_fail_conflict_length(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.exact_len = 10;
+    cfg.min_len = 5;
+    cfg.max_len = 15;
+    cfg.char_sets = "aD";
+
+    TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
+}
+
+// Тест 7: Проверка конфликт -a и -C
+void test_validate_config_fail_conflict_alphabet(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.exact_len = 10;
+    cfg.alphabet = "abc";
+    cfg.char_sets = "aD";
+
+    TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
+}
+
+// 8. Сборка алфавита -C aD
+void test_build_alphabet(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+    cfg.char_sets = "aD";
+
+    char* alph = build_alphabet(&cfg);
+    TEST_ASSERT_NOT_NULL(alph);
+    // 26 + 10  = 36 
+    TEST_ASSERT_EQUAL_INT(36, strlen(alph));
+    free(alph);
+}
+
+// 9. Равномерная вероятность
+void test_build_weights_uniform(void) {
+    GeneratorConfig cfg;
+    init_config(&cfg);
+
+    char* alph = "abcd"; // 4 символа
+    double* weights = build_weights(&cfg, alph);
+
+    TEST_ASSERT_NOT_NULL(weights);
+    TEST_ASSERT_FLOAT_WITHIN(0.001, 0.25, weights[0]);
+    free(weights);
+}
+
+// 10. Генерация пароля
+void test_generate_password_length(void) {
+    char* alph = "abcdef";
+    char* pass = generate_password(15, alph, NULL);
+
+    TEST_ASSERT_NOT_NULL(pass);
+    // Проверяем, что длина = 15
+    TEST_ASSERT_EQUAL_INT(15, strlen(pass));
+    free(pass);
 }
 
 int main(void) {
     UNITY_BEGIN();
-    RUN_TEST(TestLibAddFunction);
+    RUN_TEST(test_init_config);
+    RUN_TEST(test_update_separators_add);
+    RUN_TEST(test_update_separators_replace);
+    RUN_TEST(test_validate_config_success);
+    RUN_TEST(test_validate_config_fail_no_length);
+    RUN_TEST(test_validate_config_fail_conflict_length);
+    RUN_TEST(test_validate_config_fail_conflict_alphabet);
+    RUN_TEST(test_build_alphabet);
+    RUN_TEST(test_build_weights_uniform);
+    RUN_TEST(test_generate_password_length);
     return UNITY_END();
 }
-
