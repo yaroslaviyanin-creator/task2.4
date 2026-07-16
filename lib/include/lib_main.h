@@ -16,6 +16,8 @@ typedef struct {
     char* alphabet;        // Пользовательский алфавит (-a)
     char* char_sets;       // Наборы символов (-C: a, A, D, S)
     char separators[32];   // Допустимые разделители
+    double probs[128];     // Массив для хранения вероятностей 
+    int probs_count;       // Сколько вероятностей было задано
 } GeneratorConfig;
 
 // Инициализация структуры стандартными значениями
@@ -33,5 +35,8 @@ int validate_config(const GeneratorConfig* cfg);
 // Формирование итогового алфавита на основе выбранных опций
 char* build_alphabet(const GeneratorConfig* cfg);
 
-// Генерация случайного пароля заданной длины из переданного алфавита
-char* generate_password(int length, const char* alphabet);
+// Генерация случайного пароля заданной длины из переданного алфавита с учетом вероятностей
+char* generate_password(int length, const char* alphabet, const double* weights);
+
+// Расчет вероятностей для каждого символа из итогового алфавита
+double* build_weights(const GeneratorConfig* cfg, const char* alphabet);
