@@ -254,3 +254,69 @@ int validate_config(const GeneratorConfig* cfg) {
 
     return 1;
 }
+
+// Функция для создания строки со всеми допустимыми символами для пароля
+// <cfg> - указатель на структуру с параметрами
+// Возвращает динамически выделенную строку (необходимо освободить через free), либо NULL при ошибке
+char* build_alphabet(const GeneratorConfig* cfg) {
+    if (cfg->alphabet) {
+        // Если передан пользовательский алфавит, просто копируем его
+        char* res = (char*)malloc(strlen(cfg->alphabet) + 1);
+        if (res) {
+            strcpy(res, cfg->alphabet);
+        }
+        return res;
+    }
+
+    if (cfg->char_sets) {
+        // Выделяем буфер с запасом (26 мал + 26 бол + 10 цифр + 30 спецсимволов = ~92 байта)
+        // 128 байт хватит с головой
+        char* res = (char*)malloc(128);
+        if (!res) return NULL;
+
+        res[0] = '\0'; // Инициализируем пустой строкой
+
+        for (int i = 0; cfg->char_sets[i] != '\0'; i++) {
+            char c = cfg->char_sets[i];
+            if (c == 'a') {
+                strcat(res, "abcdefghijklmnopqrstuvwxyz");
+            }
+            else if (c == 'A') {
+                strcat(res, "ABCDEFGHIJKLMNOPQRSTUVWXYZ");
+            }
+            else if (c == 'D') {
+                strcat(res, "0123456789");
+            }
+            else if (c == 'S') {
+                strcat(res, "!@#$%^&*()_+-=[]{}|;:,.<>?");
+            }
+        }
+        return res;
+    }
+
+    return NULL;
+}
+
+// Функция для генерации случайного пароля
+// <length> - требуемая длина пароля
+// <alphabet> - строка с допустимыми символами
+// Возвращает динамически выделенную строку с паролем, либо NULL при ошибке
+char* generate_password(int length, const char* alphabet) {
+    if (length <= 0 || !alphabet) return NULL;
+
+    int alph_len = strlen(alphabet);
+    if (alph_len == 0) return NULL;
+
+    // Выделяем память под пароль + нуль-терминатор
+    char* password = (char*)malloc(length + 1);
+    if (!password) return NULL;
+
+    for (int i = 0; i < length; i++) {
+        // Берем случайный индекс от 0 до alph_len - 1
+        int rand_index = rand() % alph_len;
+        password[i] = alphabet[rand_index];
+    }
+    password[length] = '\0';
+
+    return password;
+}
