@@ -8,6 +8,8 @@ lib_main.c - главный модуль библиотеки.
 #include "lib_main.h"
 #include <string.h>
 #include <stddef.h>
+#include <stdlib.h>
+
 
 // <cfg> - указатель на структуру с параметрами
 void init_config(GeneratorConfig* cfg) {
@@ -74,13 +76,39 @@ static char* get_arg_value(const char* arg, const char* prefix, GeneratorConfig*
     return val;
 }
 
+// Функция для безопасного преобразования строки в положительное целое число
+// <str> - исходная строковое представление числа
+// <val> - указатель на переменную для записи результата
+// Возвращает 1 в случае успеха, 0 при ошибке формата
+static int parse_positive_int(const char* str, int* val) {
+    if (!str || *str == '\0') return 0;
+
+    char* endptr;
+    long res = strtol(str, &endptr, 10);
+
+    // Проверяем, что вся строка была числом и число больше нуля
+    if (*endptr != '\0' || res <= 0) {
+        return 0;
+    }
+
+    *val = (int)res;
+    return 1;
+}
+
+
+// Функция для парсинга аргументов командной строки
+// <argc> - количество переданных аргументов
+// <argv> - массив строк с аргументами
+// <cfg> - указатель на структуру с параметрами генерации
+// Возвращает 0 при успешном парсинге, -1 в случае ошибки
 int parse_args(int argc, char* argv[], GeneratorConfig* cfg) {
+    int has_minl = 0, has_maxl = 0, has_n = 0, has_c = 0;
+
     for (int i = 1; i < argc; i++) {
         char* arg = argv[i];
 
-        if (arg[0] != '-') continue; // Игнорируем всё, что не является опцией
+        if (arg[0] != '-') continue;
 
-        // Обработка настройки разделителей (применяется сразу)
         if (starts_with(arg, "-d")) {
             char* val = get_arg_value(arg, "-d", cfg, &i, argc, argv, 1);
             if (val) update_separators(cfg, val, 0);
@@ -92,30 +120,93 @@ int parse_args(int argc, char* argv[], GeneratorConfig* cfg) {
             continue;
         }
 
-        // Извлечение остальных параметров (пока просто печатаем для проверки)
+        // Обработка числовых параметров
         if (starts_with(arg, "-minl")) {
+            if (has_minl) {
+                fprintf(stderr, "Error: option -minl is duplicated.\n");
+                return -1;
+            }
             char* val = get_arg_value(arg, "-minl", cfg, &i, argc, argv, 0);
-            if (val) printf("Parsed minl: %s\n", val);
+            if (!val || !parse_positive_int(val, &cfg->min_len)) {
+                fprintf(stderr, "Error: invalid value for -minl.\n");
+                return -1;
+            }
+            has_minl = 1;
+            continue;
         }
-        else if (starts_with(arg, "-maxl")) {
+        if (starts_with(arg, "-maxl")) {
+            if (has_maxl) {
+                fprintf(stderr, "Error: option -maxl is duplicated.\n");
+                return -1;
+            }
             char* val = get_arg_value(arg, "-maxl", cfg, &i, argc, argv, 0);
-            if (val) printf("Parsed maxl: %s\n", val);
+            if (!val || !parse_positive_int(val, &cfg->max_len)) {
+                fprintf(stderr, "Error: invalid value for -maxl.\n");
+                return -1;
+            }
+            has_maxl = 1;
+            continue;
         }
-        else if (starts_with(arg, "-n")) {
+        if (starts_with(arg, "-n")) {
+            if (has_n) {
+                fprintf(stderr, "Error: option -n is duplicated.\n");
+                return -1;
+            }
             char* val = get_arg_value(arg, "-n", cfg, &i, argc, argv, 0);
-            if (val) printf("Parsed n: %s\n", val);
+            if (!val || !parse_positive_int(val, &cfg->exact_len)) {
+                fprintf(stderr, "Error: invalid value for -n.\n");
+                return -1;
+            }
+            has_n = 1;
+            continue;
         }
-        else if (starts_with(arg, "-c")) {
+        if (starts_with(arg, "-c")) {
+            if (has_c) {
+                fprintf(stderr, "Error: option -c is duplicated.\n");
+                return -1;
+            }
             char* val = get_arg_value(arg, "-c", cfg, &i, argc, argv, 0);
-            if (val) printf("Parsed c: %s\n", val);
+            if (!val || !parse_positive_int(val, &cfg->count)) {
+                fprintf(stderr, "Error: invalid value for -c.\n");
+                return -1;
+            }
+            has_c = 1;
+            continue;
         }
-        else if (starts_with(arg, "-C")) {
+
+        // Обработка строковых параметров
+        if (starts_with(arg, "-C")) {
+            if (cfg->char_sets) {
+                fprintf(stderr, "Error: option -C is duplicated.\n");
+                return -1;
+            }
             char* val = get_arg_value(arg, "-C", cfg, &i, argc, argv, 0);
-            if (val) printf("Parsed C: %s\n", val);
+            if (!val || *val == '\0') {
+                fprintf(stderr, "Error: missing value for -C.\n");
+                return -1;
+            }
+            // Проверка, что используются только допустимые символы {a, A, D, S}
+            for (int j = 0; val[j] != '\0'; j++) {
+                if (val[j] != 'a' && val[j] != 'A' && val[j] != 'D' && val[j] != 'S') {
+                    fprintf(stderr, "Error: invalid character in -C. Use only a, A, D, S.\n");
+                    return -1;
+                }
+            }
+            cfg->char_sets = val;
+            continue;
         }
-        else if (starts_with(arg, "-a")) {
+        if (starts_with(arg, "-a")) {
+            if (cfg->alphabet) {
+                fprintf(stderr, "Error: option -a is duplicated.\n");
+                return -1;
+            }
             char* val = get_arg_value(arg, "-a", cfg, &i, argc, argv, 0);
-            if (val) printf("Parsed a: %s\n", val);
+            if (!val || *val == '\0') {
+                fprintf(stderr, "Error: missing value for -a.\n");
+                return -1;
+            }
+            cfg->alphabet = val;
+            continue;
         }
     }
     return 0;
