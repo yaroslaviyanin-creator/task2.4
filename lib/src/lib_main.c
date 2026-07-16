@@ -353,3 +353,83 @@ char* generate_password(int length, const char* alphabet) {
 
     return password;
 }
+
+
+// Функция для расчета вероятности каждого конкретного символа
+// <cfg> - указатель на структуру с параметрами
+// <alphabet> - итоговая строка алфавита
+// Возвращает динамический массив double, либо NULL
+double* build_weights(const GeneratorConfig* cfg, const char* alphabet) {
+    if (!alphabet) return NULL;
+    int alph_len = strlen(alphabet);
+    if (alph_len == 0) return NULL;
+
+    double* weights = (double*)malloc(alph_len * sizeof(double));
+    if (!weights) return NULL;
+
+    // Если вероятности вообще не задали - делаем всем одинаково
+    if (cfg->probs_count == 0) {
+        for (int i = 0; i < alph_len; i++) {
+            weights[i] = 1.0 / alph_len;
+        }
+        return weights;
+    }
+
+    // Логика для кастомного алфавита (-a)
+    if (cfg->alphabet != NULL) {
+        double sum = 0.0;
+        int specified = (cfg->probs_count < alph_len) ? cfg->probs_count : alph_len;
+        for (int i = 0; i < specified; i++) {
+            sum += cfg->probs[i];
+        }
+        if (sum > 1.0) sum = 1.0; // Защита, если ввели больше 100%
+
+        double remaining = 1.0 - sum;
+        int unset_count = alph_len - specified;
+        double default_weight = (unset_count > 0) ? (remaining / unset_count) : 0.0;
+
+        for (int i = 0; i < alph_len; i++) {
+            if (i < specified) weights[i] = cfg->probs[i];
+            else weights[i] = default_weight;
+        }
+        return weights;
+    }
+
+    // Логика для наборов символов (-C)
+    if (cfg->char_sets != NULL) {
+        int sets_count = strlen(cfg->char_sets);
+        double sum = 0.0;
+        int specified = (cfg->probs_count < sets_count) ? cfg->probs_count : sets_count;
+        for (int i = 0; i < specified; i++) {
+            sum += cfg->probs[i];
+        }
+        if (sum > 1.0) sum = 1.0;
+
+        double remaining = 1.0 - sum;
+        int unset_count = sets_count - specified;
+        double default_set_weight = (unset_count > 0) ? (remaining / unset_count) : 0.0;
+
+        int current_idx = 0;
+        for (int i = 0; i < sets_count; i++) {
+            char c = cfg->char_sets[i];
+            double set_weight = (i < specified) ? cfg->probs[i] : default_set_weight;
+
+            int chars_in_set = 0;
+            if (c == 'a' || c == 'A') chars_in_set = 26;
+            else if (c == 'D') chars_in_set = 10;
+            else if (c == 'S') chars_in_set = 26; // В нашем наборе S ровно 26 символов
+
+            double weight_per_char = chars_in_set > 0 ? (set_weight / chars_in_set) : 0.0;
+
+            for (int j = 0; j < chars_in_set; j++) {
+                if (current_idx < alph_len) {
+                    weights[current_idx] = weight_per_char;
+                    current_idx++;
+                }
+            }
+        }
+        return weights;
+    }
+
+    return weights;
+}

@@ -37,3 +37,6 @@ char* build_alphabet(const GeneratorConfig* cfg);
 
 // Генерация случайного пароля заданной длины из переданного алфавита
 char* generate_password(int length, const char* alphabet);
+
+// Расчет вероятностей для каждого символа из итогового алфавита
+double* build_weights(const GeneratorConfig* cfg, const char* alphabet);

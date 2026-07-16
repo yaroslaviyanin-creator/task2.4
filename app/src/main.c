@@ -11,7 +11,7 @@ main.c - главный модуль программы.
 #include <time.h>
 
 int main(int argc, char* argv[]) {
-    // Включаем случайные числа
+    // Включаем генератор случайных чисел
     srand((unsigned int)time(NULL));
 
     GeneratorConfig config;
@@ -34,6 +34,14 @@ int main(int argc, char* argv[]) {
         return 1;
     }
 
+    // Считаем вероятности для каждого символа из алфавита
+    double* weights = build_weights(&config, full_alphabet);
+    if (!weights) {
+        fprintf(stderr, "Error: failed to build weights.\n");
+        free(full_alphabet);
+        return 1;
+    }
+
     // Выводим нужное количество паролей
     for (int i = 0; i < config.count; i++) {
         int current_len = 0;
@@ -44,19 +52,20 @@ int main(int argc, char* argv[]) {
         }
         else {
             // Если задан диапазон (например 10-15)
-            // +1 нужно, чтобы верхняя граница тоже включалась
             int diff = config.max_len - config.min_len + 1;
             current_len = config.min_len + (rand() % diff);
         }
 
-        // Генерируем и печатаем
+        // Генерируем и печатаем (вероятности пока не передаем, сделаем это в следующем шаге)
         char* password = generate_password(current_len, full_alphabet);
         if (password) {
             printf("%s\n", password);
-            free(password); // Не забываем чистить память
+            free(password); // Чистим память после каждого пароля
         }
     }
 
+    // Очищаем память, выделенную под алфавит и вероятности
+    free(weights);
     free(full_alphabet);
 
     return 0;
