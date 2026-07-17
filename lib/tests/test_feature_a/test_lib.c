@@ -18,82 +18,82 @@ void tearDown(void) {
     // Вызывается после каждого теста
 }
 
-// Тест 1: Проверка инициализации структуры
+// Проверка инициализации структуры
 void test_init_config(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
-    TEST_ASSERT_EQUAL_INT(0, cfg.min_len);
-    TEST_ASSERT_EQUAL_INT(1, cfg.count);
-    TEST_ASSERT_EQUAL_STRING("=:", cfg.separators);
+    TEST_ASSERT_EQUAL_INT(0, cfg.psw_min_len);
+    TEST_ASSERT_EQUAL_INT(1, cfg.count_psw);
+    TEST_ASSERT_EQUAL_STRING("=:", cfg.cur_separators);
 }
 
-// Тест 2: Проверка  -d
+// Проверка  -d
 void test_update_separators_add(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
 
     // Добавляем восклицательный знак
     update_separators(&cfg, "!", 0);
     // Должно стать =:!
-    TEST_ASSERT_EQUAL_STRING("=:!", cfg.separators);
+    TEST_ASSERT_EQUAL_STRING("=:!", cfg.cur_separators);
 }
 
-// Тест 3: Проверка -D
+// Проверка -D
 void test_update_separators_replace(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
 
     // Заменяем всё на тире
     update_separators(&cfg, "-", 1);
-    TEST_ASSERT_EQUAL_STRING("-", cfg.separators);
+    TEST_ASSERT_EQUAL_STRING("-", cfg.cur_separators);
 }
 
-// Тест 4: Проверка настроек
+// Проверка настроек
 void test_validate_config_success(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
-    cfg.exact_len = 10;
+    cfg.psw_len = 10;
     cfg.char_sets = "aD";
 
     TEST_ASSERT_EQUAL_INT(1, validate_config(&cfg));
 }
 
-// Тест 5: Проверка ошибки длины
+// Проверка ошибки длины
 void test_validate_config_fail_no_length(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
     cfg.char_sets = "aD";
 
-    // min_len и exact_len равны 0
+    // psw_min_len и psw_len равны 0
     TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
 }
 
-// Тест 6: Проверка конфликта -minl и -n
+// Проверка конфликта -minl и -n
 void test_validate_config_fail_conflict_length(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
-    cfg.exact_len = 10;
-    cfg.min_len = 5;
-    cfg.max_len = 15;
+    cfg.psw_len = 10;
+    cfg.psw_min_len = 5;
+    cfg.psw_max_len = 15;
     cfg.char_sets = "aD";
 
     TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
 }
 
-// Тест 7: Проверка конфликт -a и -C
+// Проверка конфликт -a и -C
 void test_validate_config_fail_conflict_alphabet(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
-    cfg.exact_len = 10;
+    cfg.psw_len = 10;
     cfg.alphabet = "abc";
     cfg.char_sets = "aD";
 
     TEST_ASSERT_EQUAL_INT(0, validate_config(&cfg));
 }
 
-// 8. Сборка алфавита -C aD
+// Сборка алфавита -C aD
 void test_build_alphabet(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
     cfg.char_sets = "aD";
 
@@ -104,9 +104,9 @@ void test_build_alphabet(void) {
     free(alph);
 }
 
-// 9. Равномерная вероятность
+// Равномерная вероятность
 void test_build_weights_uniform(void) {
-    GeneratorConfig cfg;
+    TConfig cfg;
     init_config(&cfg);
 
     char* alph = "abcd"; // 4 символа
@@ -117,7 +117,7 @@ void test_build_weights_uniform(void) {
     free(weights);
 }
 
-// 10. Генерация пароля
+// Генерация пароля
 void test_generate_password_length(void) {
     char* alph = "abcdef";
     char* pass = generate_password(15, alph, NULL);

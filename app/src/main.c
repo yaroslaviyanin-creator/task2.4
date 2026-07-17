@@ -14,27 +14,20 @@ int main(int argc, char* argv[]) {
     // Обновляем рандом
     srand((unsigned int)time(NULL));
 
-    GeneratorConfig config; // Создаём структуру
+    TConfig config;         // Создаём структуру конфигурацмм
     init_config(&config);   // Инициализируем её
 
     // Парсим аргументы
-    if (parse_args(argc, argv, &config) != 0) {
-        return 1;
-    }
+    if (parse_args(argc, argv, &config) != 0) return 1;
 
-    // Проверяем на ошибки
-    if (!validate_config(&config)) {
-        return 1;
-    }
+    // Проверяем конфигурацию на ошибки
+    if (!validate_config(&config)) return 1;
 
     // Собираем все разрешенные символы в одну строку
     char* full_alphabet = build_alphabet(&config); // Создаём алфавит
-    if (!full_alphabet) {
-        fprintf(stderr, "Error: failed to build alphabet.\n");
-        return 1;
-    }
+    if (!full_alphabet) { fprintf(stderr, "Error: failed to build alphabet.\n"); return 1; }
 
-    // Считаем вероятности для каждого символа из алфавита
+    // Считаем веса (вероятности) для каждого символа из алфавита
     double* weights = build_weights(&config, full_alphabet);
     if (!weights) {
         fprintf(stderr, "Error: failed to build weights.\n");
@@ -43,24 +36,21 @@ int main(int argc, char* argv[]) {
     }
 
     // Выводим нужное количество паролей
-    for (int i = 0; i < config.count; i++) {
+    for (int i = 0; i < config.count_psw; i++) {
         int current_len = 0;
 
-        // Если юзер задал точную длину
-        if (config.exact_len > 0) {
-            current_len = config.exact_len;
-        }
-        else {
-            // Если задан диапазон
-            int diff = config.max_len - config.min_len + 1;
-            current_len = config.min_len + (rand() % diff);
+        // Если пользователь задал точную длину
+        if (config.psw_len > 0) current_len = config.psw_len;
+        else {  // Если задал диапазон
+            int diff = config.psw_max_len - config.psw_min_len + 1;
+            current_len = config.psw_min_len + (rand() % diff);
         }
 
-        // Генерируем и печатаем
+        // Генерируем и печатаем пароль
         char* password = generate_password(current_len, full_alphabet, weights);
         if (password) {
             printf("%s\n", password);
-            free(password); // Чистим память после каждого пароля
+            free(password);             // Очищяем память переменной password после каждого пароля
         }
     }
 

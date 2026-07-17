@@ -7,5 +7,5 @@ parser.h - разбор аргументов командной строки.
 #pragma once
 #include "config.h"
 
-void update_separators(GeneratorConfig* cfg, const char* new_seps, int replace);
-int parse_args(int argc, char* argv[], GeneratorConfig* cfg);
+void update_separators(TConfig* cfg, const char* new_seps, int replace);
+int parse_args(int argc, char* argv[], TConfig* cfg);
