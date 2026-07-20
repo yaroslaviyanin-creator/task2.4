@@ -19,7 +19,6 @@
 > my_program.exe -n=12 -C D -c 3
 > my_program.exe -minl 8 -maxl 15 -a -c 5
 > my_program.exe -n 50 -C aD -p 0.95
-> my_program.exe -m3 -d! -n!10 -p -a -m2
 
 =================================================
 СБОРКА И ТЕСТИРОВАНИЕ ПРОЕКТА (CMake)

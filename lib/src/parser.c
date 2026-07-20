@@ -61,7 +61,7 @@ static char* get_arg_value(const char* arg, const char* prefix, TConfig* cfg, in
     // Переменная val_ptr получает адрес первого символа подстроки, которая начинается сразу после prefix в строке arg.
     char* val_ptr = (char*)(arg + strlen(prefix));  // strlen(prefix)   - длина строки prefix без учёта завершающего символа '\0'
     // arg + strlen(prefix)   - получение адреса памяти сразу после строки префикса
-// Пропустили ли мы уже разделитель
+    // Пропустили ли мы уже разделитель
     int separator_skipped = 0;
 
     // Пропуск разделителя (если он разрешён и есть).
@@ -75,7 +75,14 @@ static char* get_arg_value(const char* arg, const char* prefix, TConfig* cfg, in
     // Если после префикса и разделителя ничего нет — берём следующий аргумент
     if (*val_ptr == '\0') {
         // Если -a, то проверям что после него не идёт задание следующего аргумента
-        if (is_optional && *cur_index_arg + 1 < argc && argv[*cur_index_arg + 1][0] == '-') {
+        if (is_optional && *cur_index_arg + 1 < argc &&
+            argv[*cur_index_arg + 1][0] == '-' && argv[*cur_index_arg + 1][1] != '\0') {
+            return NULL;
+        }
+        // Если не -a, но после него идёт задание следующего аргумента
+        if (!is_optional && *cur_index_arg + 1 < argc &&
+            argv[*cur_index_arg + 1][0] == '-' && argv[*cur_index_arg + 1][1] != '\0') {
+            fprintf(stderr, "Error: missing required value for flag %s\n", argv[*cur_index_arg]);
             return NULL;
         }
         // Если не -a
