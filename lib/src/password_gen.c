@@ -73,64 +73,128 @@ double* build_weights(const TConfig* cfg, const char* alphabet) {
     // Символы заданы адфавитом
     if (cfg->alphabet != NULL) {
         sum_veroyat = 0.0;
-        // specified_veroyat — сколько вероятностей реально задано (не больше длины алфавита).
         real_count_veroyat = (cfg->veroyat_count < alph_len) ? cfg->veroyat_count : alph_len;
-        // Суммируем заданные вероятности 
-        for (int i = 0; i < real_count_veroyat; i++) sum_veroyat += cfg->veroyat[i];
-        // Если сумма больше 1, её обрезаем до 1 (защита от некорректного ввода).
-        if (sum_veroyat > 1.0) sum_veroyat = 1.0;
 
-        // Оставшуюся вероятность (1.0 - sum) равномерно распределяем между всеми «неучтёнными» символами.
-        remaining_veroyat = 1.0 - sum_veroyat;
-        unset_count = alph_len - real_count_veroyat; // Символов осталось
-        default_veroyat = (unset_count > 0) ? (remaining_veroyat / unset_count) : 0.0;
+        // Считаем сумму заданных вероятностей
+        for (int i = 0; i < real_count_veroyat; i++) {
+            sum_veroyat += cfg->veroyat[i];
+        }
 
-        for (i = 0; i < alph_len; i++) {
-            if (i < real_count_veroyat) weights[i] = cfg->veroyat[i];
-            else weights[i] = default_veroyat;
+        // Считаем сумму заданных вероятностей
+        for (int i = 0; i < real_count_veroyat; i++) {
+            sum_veroyat += cfg->veroyat[i];
+        }
+
+        // Кол-во вероятностей и символов совпадает
+        if (real_count_veroyat == alph_len) {
+            if (sum_veroyat > 0.0) {
+                for (i = 0; i < alph_len; i++) {
+                    weights[i] = cfg->veroyat[i] / sum_veroyat;
+                }
+            }
+            else {
+                // Если нули
+                for (i = 0; i < alph_len; i++) {
+                    weights[i] = 1.0 / alph_len;
+                }
+            }
+        }
+        // Кол-во вероятностей меньше, чем символов
+        else {
+            // Сумма >= 1 -> нормализуем заданные, остальным 0
+            if (sum_veroyat >= 1.0) {
+                for (i = 0; i < alph_len; i++) {
+                    if (i < real_count_veroyat) {
+                        weights[i] = cfg->veroyat[i] / sum_veroyat;
+                    }
+                    else {
+                        weights[i] = 0.0;
+                    }
+                }
+            }
+            // Сумма < 1 -> распределяем остаток по оставшимся
+            else {
+                for (i = 0; i < real_count_veroyat; i++) {
+                    weights[i] = cfg->veroyat[i];
+                }
+
+                remaining_veroyat = 1.0 - sum_veroyat;
+                unset_count = alph_len - real_count_veroyat;
+                default_veroyat = remaining_veroyat / unset_count; // Здесь unset_count гарантированно > 0
+
+                for (i = real_count_veroyat; i < alph_len; i++) {
+                    weights[i] = default_veroyat;
+                }
+            }
         }
         return weights;
     }
 
-
     // Символы заданы набором символов
     // Вероятности задаются не на отдельные символы, а на группы символов (строчные, заглавные, цифры, спецсимволы)
     if (cfg->char_sets != NULL) {
-        int sets_count = strlen(cfg->char_sets);        // количество наборов
-        sum_veroyat = 0.0;
+        int sets_count = strlen(cfg->char_sets);
         real_count_veroyat = (cfg->veroyat_count < sets_count) ? cfg->veroyat_count : sets_count;
-        // Заданные веса на наборы суммируются, 
-        for (i = 0; i < real_count_veroyat; i++) sum_veroyat += cfg->veroyat[i];
-        if (sum_veroyat > 1.0) sum_veroyat = 1.0;
+        sum_veroyat = 0.0;
 
-        // остаток распределяется между «неучтёнными» наборами.
-        remaining_veroyat = 1.0 - sum_veroyat;
-        unset_count = sets_count - real_count_veroyat;
-        default_veroyat = (unset_count > 0) ? (remaining_veroyat / unset_count) : 0.0;
+        // Считаем сумму заданных вероятностей 
+        for (i = 0; i < real_count_veroyat; i++) {
+            sum_veroyat += cfg->veroyat[i];
+        }
 
-        char char_set;                  // char_set - текущий символ из строки параметров
-        int count_chars_in_set;         // count_chars_in_set - количество символов в наборе
-        double set_weight;              // set_weight - вес набора
-        double weight_per_char;         // weight_per_char - вес на долю символа в наборе
-        int cur_index_in_set = 0;       // текущий индекс символа в наборе, сквозная нумерация между наборами
+        // Создаем временный массив для хранения весов самих наборов
+        double set_weights[5] = { 0.0 };
 
-        // Для каждого набора
+        // Кол-во вероятностей и наборов совпадает
+        if (real_count_veroyat == sets_count) {
+            if (sum_veroyat > 0.0) {
+                for (i = 0; i < sets_count; i++) set_weights[i] = cfg->veroyat[i] / sum_veroyat;
+            }
+            else {
+                // Если передали нули, делим поровну
+                for (i = 0; i < sets_count; i++) set_weights[i] = 1.0 / sets_count;
+            }
+        }
+        // Кол-во вероятностей меньше, чем наборов
+        else {
+            // Сумма >= 1.0 -> нормализуем заданные, остальные 0
+            if (sum_veroyat >= 1.0) {
+                for (i = 0; i < sets_count; i++) {
+                    if (i < real_count_veroyat) set_weights[i] = cfg->veroyat[i] / sum_veroyat;
+                    else set_weights[i] = 0.0;
+                }
+            }
+            // Сумма < 1.0 -> распределяем остаток по оставшимся
+            else {
+                for (i = 0; i < real_count_veroyat; i++) set_weights[i] = cfg->veroyat[i];
+
+                remaining_veroyat = 1.0 - sum_veroyat;
+                unset_count = sets_count - real_count_veroyat;
+                default_veroyat = remaining_veroyat / unset_count;
+
+                for (i = real_count_veroyat; i < sets_count; i++) set_weights[i] = default_veroyat;
+            }
+        }
+
+        // Распределяем веса наборов на конкретные символы
+        char char_set;
+        int count_chars_in_set;
+        double weight_per_char;
+        int cur_index_in_set = 0;
+
         for (i = 0; i < sets_count; i++) {
             char_set = cfg->char_sets[i];
-            set_weight = (i < real_count_veroyat) ? cfg->veroyat[i] : default_veroyat;
 
-            // Устанавливается, сколько в нём символов
             count_chars_in_set = 0;
-            if (char_set == 'a' || char_set == 'A') count_chars_in_set = 26;    // 26 для букв
-            else if (char_set == 'D') count_chars_in_set = 10;           // 10 для цифр
-            else if (char_set == 'S') count_chars_in_set = 26;           // 26 для спецсимволов
+            if (char_set == 'a' || char_set == 'A') count_chars_in_set = 26;
+            else if (char_set == 'D') count_chars_in_set = 10;
+            else if (char_set == 'S') count_chars_in_set = 26;
 
-            // вес набора делится поровну между всеми его символами
-            weight_per_char = count_chars_in_set > 0 ? (set_weight / count_chars_in_set) : 0.0;
+            // Вес текущего набора делится поровну между всеми его символами
+            weight_per_char = (count_chars_in_set > 0) ? (set_weights[i] / count_chars_in_set) : 0.0;
 
-            // эти веса записываются в массив weights подряд, в том же порядке, в котором наборы идут в cfg->char_sets
             for (j = 0; j < count_chars_in_set; j++) {
-                if (cur_index_in_set < alph_len) {          // alph_len - длина итогового алфавита
+                if (cur_index_in_set < alph_len) {
                     weights[cur_index_in_set] = weight_per_char;
                     cur_index_in_set++;
                 }

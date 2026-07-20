@@ -61,6 +61,9 @@ static char* get_arg_value(const char* arg, const char* prefix, TConfig* cfg, in
     // Переменная val_ptr получает адрес первого символа подстроки, которая начинается сразу после prefix в строке arg.
     char* val_ptr = (char*)(arg + strlen(prefix));  // strlen(prefix)   - длина строки prefix без учёта завершающего символа '\0'
     // arg + strlen(prefix)   - получение адреса памяти сразу после строки префикса
+    
+    while (*val_ptr == ' ') val_ptr++;
+    
     // Пропустили ли мы уже разделитель
     int separator_skipped = 0;
 
@@ -90,7 +93,7 @@ static char* get_arg_value(const char* arg, const char* prefix, TConfig* cfg, in
             (*cur_index_arg)++;             // переходим к следующему аргументу
             val_ptr = argv[*cur_index_arg];     // берём его значение
             // ещё раз проверяем разделитель, если он есть в начале строки аргумента,
-            if (!separator_skipped && strchr(cfg->cur_separators, *val_ptr) != NULL) val_ptr++;  // то пропускаем его (переходим к следующему символу)
+            if (!separator_skipped && *val_ptr != '\0' && strchr(cfg->cur_separators, *val_ptr) != NULL) val_ptr++;  // то пропускаем его (переходим к следующему символу)
         }
         else return NULL;   // нет следующего аргумента — ошибка
     }
@@ -114,21 +117,32 @@ static int parse_positive_int(const char* str, int* val_ptr) {
 // Функция для превращения строки с вероятностями в массив чисел
 // Вероятности перечислены через запятую (например, "0.1,0.5,0.4"), и кладёт их в массив veroyat.
 // count — указатель на переменную, куда функция запишет количество прочитанных чисел.
+// Функция для превращения строки с вероятностями в массив чисел
 static int parse_veroyatnosti(const char* str, double* veroyat, int* count) {
-    if (!str || *str == '\0') return 0;                 // Если строка пустая или не существует (NULL), тогда ошибка.
-    char* copy_str = (char*)malloc(strlen(str) + 1);    // Создаём копию строки: выделяем память под копию
+    if (!str || *str == '\0') return 0;                 // Если строка пустая или не существует (NULL), тогда ошибка
+    char* copy_str = (char*)malloc(strlen(str) + 1);
     if (!copy_str) return 0;
-    strcpy(copy_str, str);                              // и копируем в copy_str исходную строку, так как будем изменять копию (strtok).
+    strcpy(copy_str, str);                              // Копируем в copy_str исходную строку, так как будем изменять копию при помощи strtok
 
-    *count = 0;                             // Обнуляем счетчик найденных чисел.
-    char* part = strtok(copy_str, ",");     // part - часть строки до запятой (или до конца строки).
+    *count = 0;                                         // Обнуляем счетчик найденных чисел
+    char* part = strtok(copy_str, ",");                 // part - часть строки до запятой
     // Функция strtok модифицирует строку: заменяет разделитель "," на нулевые символы '\0', 
     // чтобы каждая часть была корректно завершёна. 
-    while (part != NULL && *count < 128) {  // Пока части не пустые и количество найденных чисел не превысило 128 - парсим:
-        // записываем полученные числа в массив veroyat.
-        veroyat[*count] = strtod(part, NULL);   // strtod - превращает строку в double, не проверяет корректность полученных чисел.
-        (*count)++;                             // Увеличиваем счетчик найденных чисел.
-        part = strtok(NULL, ",");               // Берём следующую часть.
+
+    while (part != NULL && *count < 128) {
+        // Считываем значение 
+        double parsed_val = strtod(part, NULL);         // strtod - превращает строку в double, не проверяет корректность полученных чисел
+
+        // Проверяем на отрицательность
+        if (parsed_val < 0.0) {
+            fprintf(stderr, "Error: probability cannot be negative (found %f).\n", parsed_val);
+            free(copy_str);  
+            return 0;        
+        }
+
+        veroyat[*count] = parsed_val;
+        (*count)++;
+        part = strtok(NULL, ",");                       // Берём следующую часть
     }
     free(copy_str);
     return 1;
@@ -147,7 +161,7 @@ static int parse_veroyatnosti(const char* str, double* veroyat, int* count) {
 //      cfg - указатель на структуру с параметрами конфигурации
 int parse_args(int argc, char* argv[], TConfig* cfg) {
     // Для каждой опции сначала проверяем, не встречалась ли она уже (защита от дубликатов)
-    int flag_has_minl = 0, flag_has_maxl = 0, flag_has_n = 0, flag_has_c = 0;    // ... = 0 - не было ещё опции
+    int flag_has_minl = 0, flag_has_maxl = 0, flag_has_n = 0, flag_has_c = 0, flag_has_p = 0;    // ... = 0 - не было ещё опции
     // ... = 1 - была уже опция
     char* arg;          // arg - текущий аргумент
     char* val_ptr;      // указатель на возвращаемое значение
@@ -248,6 +262,7 @@ int parse_args(int argc, char* argv[], TConfig* cfg) {
             continue;
         }
         if (start_str_with(arg, "-p")) {
+            if (flag_has_p) { fprintf(stderr, "Error: option -p is duplicated.\n"); return -1; }
             val_ptr = get_arg_value(arg, "-p", cfg, &cur_index_arg, argc, argv, 0);
             if (!val_ptr || !parse_veroyatnosti(val_ptr, cfg->veroyat, &cfg->veroyat_count)) {
                 fprintf(stderr, "Error: invalid value for -p.\n"); return -1;
